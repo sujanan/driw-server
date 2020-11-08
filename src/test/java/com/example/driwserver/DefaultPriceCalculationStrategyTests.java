@@ -48,5 +48,7 @@ public class DefaultPriceCalculationStrategyTests {
   void calculatePriceForQuantityGreaterThanCartonSizeTest() {
     assertEquals(23188, strategy.calculate(17500, 20, 25));
     assertEquals(47250, strategy.calculate(17500, 20, 60));
+    // If we don't use reduced carton price for calculating price of new units, it would be 48388
+    assertEquals(48274, strategy.calculate(17500, 20, 61));
   }
 }

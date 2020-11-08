@@ -6,10 +6,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.persistence.EntityManager;
-import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.Collection;
@@ -44,15 +42,17 @@ public class ProductController {
   @GetMapping("/api/products/{id}/prices/collection")
   public Collection<Price> getPriceCollectionOfProducts(
       @PathVariable Long id, @PageableDefault(value = 50) Pageable pageable) {
-    return service.getPriceCollection(
-        entityManager.find(Product.class, id),
-        (int) (pageable.getOffset() + 1),
-        ((pageable.getPageNumber() + 1) * pageable.getPageSize()) + 1);
+    int start = (int) (pageable.getOffset() + 1);
+    int end = ((pageable.getPageNumber() + 1) * pageable.getPageSize()) + 1;
+    if (end > 10000) {
+      throw new IllegalArgumentException("Quantity must be less than or equal to 10000");
+    }
+    return service.getPriceCollection(entityManager.find(Product.class, id), start, end);
   }
 
-  @ExceptionHandler({ConstraintViolationException.class, MethodArgumentTypeMismatchException.class})
-  @ResponseStatus(HttpStatus.OK)
-  public ErrorResponse handleConstraintViolationException(Exception e) {
+  @ExceptionHandler({Exception.class})
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ErrorResponse handleErrors(Exception e) {
     return ErrorResponse.forError(HttpStatus.BAD_REQUEST, e.getMessage());
   }
 }
